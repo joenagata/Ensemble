@@ -1,12 +1,12 @@
 # Ensemble
 
 
-[🇯🇵 日本語はこちら](README_ja.md)
+[🇺🇸 English version here](README.md)
 
-Ensemble.
+M5StickC PLUS2を使用して、Bluetoothで接続したMIDI機器のアンサンブルを演奏します。
 
 ### Key Features
-- Ensemble
+- アンサンブル
 
 ### Hardware
 - M5StickC PLUS2
