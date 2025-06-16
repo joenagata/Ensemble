@@ -1,6 +1,20 @@
 // ************************************************** **************************************************
 // Ensemble v1.0
 //
+// Alchemy Synth
+// Leads - Airy Synth Lead
+// Leads - Classic 80s Epic Brass
+// Mallets - Sweet Bell
+// Mallets - Warm Bell Pad
+// Pads - Blue Air
+// Pads - Epic Cloud Formation
+//
+// Synth Classics - Soft Analog
+//
+// Synth Pads - Hollywood Strings
+//
+// Other - Strings Staccato
+// Other - Acoustic Guitar
 //
 // ************************************************** **************************************************
 // <Hardware>
@@ -11,8 +25,8 @@
 // ローカル変数    camelCase        data
 // グローバル変数  g_camelCase      g_lastSpread
 // 定数          PascalCase        Friction
-// 列挙名（enum） PascalCase        
-// enumの内容    PascalCase        
+// 列挙名（enum） PascalCase
+// enumの内容    PascalCase
 // ************************************************** **************************************************
 
 const String SrcId = "Ensemble";
@@ -20,6 +34,7 @@ const String SrcVer = "1.0";
 
 //#define Debug
 
+#include <Midi.h>
 #include <M5Unified.h>
 
 #include "ball.h"  // 画像データ
@@ -81,9 +96,12 @@ int g_lastSpread = 0;
 int g_timbre = 0;
 int g_lastTimbre = 0;
 int g_pos = 0;
+int g_note[7] = { 60, 60, 60, 60, 60, 60, 60 };
 
 int g_next = 0;
 int g_prev = 0;
+
+MidiBleServer midiServer("M5Stick");
 
 // ************************************************** **************************************************
 // dispText
@@ -112,6 +130,10 @@ void setup() {
     M5.Display.println("IMU not found!");
     while (1) delay(100);
   }
+
+  // MIDI準備
+  midiServer.begin();
+  midiServer.setDefaultSendingChannel(0);
 
   M5.Display.setRotation(0);
   M5.Display.setSwapBytes(false);
@@ -200,6 +222,9 @@ void loop() {
 
     if (g_timbre != g_lastTimbre || g_spread != g_lastSpread) {
       Serial.println("Note off");
+      for (int i = 0; i < 7; i++) {
+        midiServer.noteOff(g_note[i], 0, 0);
+      }
 
       g_lastTimbre = g_timbre;
       g_lastSpread = g_spread;
@@ -208,15 +233,17 @@ void loop() {
 
         Serial.println("Note on timbre:" + String(g_timbre) + " spread:" + String(g_spread));
 
-        int note = Fifth[g_scale][(g_pos + g_timbre + 7) % 7];
+        int code = Fifth[g_scale][(g_pos + g_timbre + 7) % 7];
         for (int i = 0; i < 7; i++) {
-          Serial.println(" i:" + String(i) + " note:" + String(Pitch[g_scale][g_spread][i] + note));
+          g_note[i] = Pitch[g_scale][g_spread - 1][i] + code;
+          Serial.print(" note" + String(i) + ":" + String(g_note[i]));
+          midiServer.noteOn(g_note[i], 100, 0);
         }
         Serial.println();
 
       } else {
         // 無音の時
-        Serial.println("---- ---- ----");
+        Serial.println("----");
       }
     }
 
@@ -247,11 +274,28 @@ void loop() {
 
   // ボタンAを押した時
   if (M5.BtnA.wasPressed()) {
-    g_scale = 1 - g_scale;
+    Serial.println("Button A");
 
+    g_scale = 1 - g_scale;
     dispText();
   }
 
+  /*
+  if (M5.BtnB.wasPressed()) {
+  }
+  */
+
+  if (M5.BtnPWR.wasClicked()) {
+    Serial.println("Button Power");
+
+    int code = Fifth[g_scale][g_pos];
+    for (int j = 0; j < 7; j++) {
+      for (int i = 0; i < 7; i++) {
+        midiServer.noteOff(Pitch[g_scale][j][i] + code, 0, 0);
+        delay(20);
+      }
+    }
+  }
   delay(16);
 }
 
