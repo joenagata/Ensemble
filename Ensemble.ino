@@ -1,18 +1,18 @@
 // ************************************************** **************************************************
 // Ensemble v1.0
 //
-// 
+//
 // ************************************************** **************************************************
 // <Hardware>
 // M5StickC PLUS2
 // ************************************************** **************************************************
 //
 // ************************************************** **************************************************
-// ローカル変数    camelCase        dispPage
-// グローバル変数  g_camelCase      g_dispPage
-// 定数          UPPER_CASE        MAX_PAGE
-// 列挙名（enum） PascalCase        PageType
-// enumの内容    PascalCase        PagePlay
+// ローカル変数    camelCase        data
+// グローバル変数  g_camelCase      g_lastSpread
+// 定数          PascalCase        Friction
+// 列挙名（enum） PascalCase        
+// enumの内容    PascalCase        
 // ************************************************** **************************************************
 
 const String SrcId = "Ensemble";
@@ -27,13 +27,46 @@ const String SrcVer = "1.0";
 // ************************************************** **************************************************
 // Const
 
-constexpr int RADIUS = 10;
+constexpr int Radius = 20;
 
 // 物理パラメータ
-const float ACCEL_SCALE = 3.5f;  // 傾きによる加速 2.0〜5.0
-const float SPRING_X = 0.03f;   // 中心へ戻すばねの強さ 0.01〜0.1
-const float SPRING_Y = 0.01f;   // 中心へ戻すばねの強さ 0.01〜0.1
-const float FRICTION = 0.90f;    // 摩擦（速度の減衰） 0.85〜0.95
+const float AccelScale = 3.5f;  // 傾きによる加速 2.0〜5.0
+const float SpringX = 0.03f;    // 中心へ戻すばねの強さ 0.01〜0.1
+const float SpringY = 0.01f;    // 中心へ戻すばねの強さ 0.01〜0.1
+const float Friction = 0.90f;   // 摩擦（速度の減衰） 0.85〜0.95
+
+const int Pitch[2][7][7] = {  // Pitch[g_scale][g_spread][osc]
+  { { 0, 0, 0, 0, 0, 0, 0 },
+    { -5, -5, 0, 0, 0, 4, 4 },
+    { -8, -8, -5, 0, 4, 7, 7 },
+    { -12, -8, -5, 0, 4, 7, 12 },
+    { -17, -12, -8, 0, 7, 12, 16 },
+    { -20, -17, -8, 0, 7, 16, 19 },
+    { -24, -17, -8, 0, 7, 16, 24 } },
+  { { 0, 0, 0, 0, 0, 0, 0 },
+    { -5, -5, 0, 0, 0, 3, 3 },
+    { -9, -9, -5, 0, 3, 7, 7 },
+    { -12, -9, -5, 0, 3, 7, 12 },
+    { -17, -12, -9, 0, 7, 12, 15 },
+    { -21, -17, -9, 0, 7, 15, 19 },
+    { -24, -17, -9, 0, 7, 15, 24 } }
+};
+
+const int Fifth[2][7] = { {
+                            //  60, 64, 55, 59, 62, 65, 57  // C4, E4, G3, B3, D4, F4, A3
+                            60, 55, 62, 57, 64, 59, 65  // C4, G3, D4, A3, E4, B3, F4
+                          },
+                          {
+                            //  60, 63, 55, 58, 62, 65, 56
+                            60, 55, 62, 56, 63, 58, 65  // C4, G3, D4, Ab3, Eb4, Bb3, F4
+                          } };
+
+const char *FifthName[2][7] = { { //  "GCE", "BEG", "DGB", "FBD", "ADF", "CFA", "EAC"
+                                  //  "C", "E", "G", "B", "D", "F", "A"
+                                  "C", "G", "D", "A", "E", "B", "F" },
+                                { //  "GCEb", "BbEG", "DGBb", "FBbD", "AbDF", "CFAb", "EbAbC"
+                                  //  "C", "Eb", "G", "Bb", "D", "F", "Ab"
+                                  "C", "G", "D", "Ab", "Eb", "Bb", "F" } };
 
 // ************************************************** **************************************************
 // Gloval
@@ -42,6 +75,29 @@ int g_screen_w, g_screen_h;
 float g_x, g_y;            // ボールの位置
 float g_vx = 0, g_vy = 0;  // ボールの速度
 
+int g_scale = 0;  // 0:Major, 1:Minor
+int g_spread = 0;
+int g_lastSpread = 0;
+int g_timbre = 0;
+int g_lastTimbre = 0;
+int g_pos = 0;
+
+int g_next = 0;
+int g_prev = 0;
+
+// ************************************************** **************************************************
+// dispText
+// ************************************************** **************************************************
+
+void dispText() {
+  M5.Lcd.fillRect(0, 220, 135, 20, BLACK);
+  M5.Lcd.setTextFont(&fonts::FreeMono12pt7b);
+  M5.Display.setTextColor(g_scale ? MAGENTA : CYAN, BLACK);
+  M5.Display.drawString(FifthName[g_scale][g_pos], 67, 228);
+  M5.Display.drawString(FifthName[g_scale][(g_pos + 6) % 7], 20, 228);
+  M5.Display.drawString(FifthName[g_scale][(g_pos + 1) % 7], 115, 228);
+}
+
 // ************************************************** **************************************************
 // setup
 // ************************************************** **************************************************
@@ -49,6 +105,7 @@ float g_vx = 0, g_vy = 0;  // ボールの速度
 void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
+  Serial.begin(115200);
 
   // 傾きセンサーの確認
   if (M5.Imu.getType() == m5::imu_none) {
@@ -58,7 +115,7 @@ void setup() {
 
   M5.Display.setRotation(0);
   M5.Display.setSwapBytes(false);
-  M5.Display.fillScreen(TFT_BLACK);
+  M5.Display.fillScreen(BLACK);
 
   M5.Lcd.setTextDatum(middle_center);
   M5.Lcd.setTextSize(1);
@@ -67,13 +124,9 @@ void setup() {
   g_screen_h = M5.Display.height() - 20;
 
   g_x = g_screen_w / 2.0f;
-  g_y = g_screen_h / 2.0f;
+  g_y = g_screen_h - 30;
 
-  M5.Lcd.setTextFont(&fonts::FreeMono12pt7b);
-  M5.Display.drawString("GCE", 67, 228);
-  M5.Lcd.setTextFont(&fonts::FreeMono9pt7b);
-  M5.Display.drawString("EAC", 20, 229);
-  M5.Display.drawString("BEG", 115, 229);
+  dispText();
 }
 
 // ************************************************** **************************************************
@@ -84,55 +137,122 @@ void loop() {
   if (M5.Imu.update()) {
     auto data = M5.Imu.getImuData();
 
-    // 前の円を消去
-    M5.Display.fillRect((int)g_x - 9, (int)g_y - 9, 18, 18, TFT_BLACK);
+    // 前の球を消去
+    M5.Display.fillRect((int)g_x - Radius, (int)g_y - Radius, imgWidth, imgHeight, TFT_BLACK);
 
     // センサーによる加速度
-    float ax = -data.accel.x * ACCEL_SCALE;
-    float ay = data.accel.y * ACCEL_SCALE;
+    float ax = -data.accel.x * AccelScale;
+    float ay = data.accel.y * AccelScale;
 
     // 中心への復元力
     float cx = g_screen_w / 2.0f;
     float cy = g_screen_h;
     //float cy = g_screen_h / 2.0f;
-    float fx = -(g_x - cx) * SPRING_X;
-    float fy = -(g_y - cy) * SPRING_Y;
+    float fx = -(g_x - cx) * SpringX;
+    float fy = -(g_y - cy) * SpringY;
 
     // 合成加速度 → 速度
     g_vx += ax + fx;
     g_vy += ay + fy;
 
     // 摩擦
-    g_vx *= FRICTION;
-    g_vy *= FRICTION;
+    g_vx *= Friction;
+    g_vy *= Friction;
 
     // 速度 → 位置
     g_x += g_vx;
     g_y += g_vy;
 
     // 画面外に出ないよう制限
-    if (g_x < RADIUS) {
-      g_x = RADIUS;
+    if (g_x < Radius) {
+      g_x = Radius;
       g_vx = 0;
     }
-    if (g_x > g_screen_w - RADIUS) {
-      g_x = g_screen_w - RADIUS;
+    if (g_x > g_screen_w - Radius) {
+      g_x = g_screen_w - Radius;
       g_vx = 0;
     }
-    if (g_y < RADIUS) {
-      g_y = RADIUS;
+    if (g_y < Radius) {
+      g_y = Radius;
       g_vy = 0;
     }
-    if (g_y > g_screen_h - RADIUS) {
-      g_y = g_screen_h - RADIUS;
+    if (g_y > g_screen_h - Radius) {
+      g_y = g_screen_h - Radius;
       g_vy = 0;
     }
 
-    // 現在位置に円を描画
-    M5.Display.pushImage((int)g_x - 9, (int)g_y - 9, imgWidth, imgHeight, img);
+    // 現在位置に球を描画
+    M5.Display.pushImage((int)g_x - Radius, (int)g_y - Radius, imgWidth, imgHeight, img);
+
+    if (g_x < 52) {
+      g_timbre = -1;
+    } else if (g_x < 84) {
+      g_timbre = 0;
+    } else {
+      g_timbre = 1;
+    }
+
+    g_spread = (200 - g_y) / 22.5;
+
+    if (g_spread == 8) {
+      g_spread = 7;
+    }
+
+    if (g_timbre != g_lastTimbre || g_spread != g_lastSpread) {
+      Serial.println("Note off");
+
+      g_lastTimbre = g_timbre;
+      g_lastSpread = g_spread;
+
+      if (g_spread > 0) {
+
+        Serial.println("Note on timbre:" + String(g_timbre) + " spread:" + String(g_spread));
+
+        int note = Fifth[g_scale][(g_pos + g_timbre + 7) % 7];
+        for (int i = 0; i < 7; i++) {
+          Serial.println(" i:" + String(i) + " note:" + String(Pitch[g_scale][g_spread][i] + note));
+        }
+        Serial.println();
+
+      } else {
+        // 無音の時
+        Serial.println("---- ---- ----");
+      }
+    }
+
+    // 右に大きく傾けて戻した時
+    if (g_next == 0 && ax > 2.5) {
+      g_next = 1;
+    } else if (g_next == 1 && ax < 1.5) {
+      // next code
+      g_pos = (g_pos + 1) % 7;
+      g_next = 0;
+
+      dispText();
+    }
+
+    // 左に大きく傾けて戻した時
+    if (g_prev == 0 && ax < -2.5) {
+      g_prev = 1;
+    } else if (g_prev == 1 && ax > -1.5) {
+      // prev code
+      g_pos = (g_pos + 6) % 7;
+      g_prev = 0;
+
+      dispText();
+    }
   }
 
-  delay(16);  // 約60FPS
+  M5.update();
+
+  // ボタンAを押した時
+  if (M5.BtnA.wasPressed()) {
+    g_scale = 1 - g_scale;
+
+    dispText();
+  }
+
+  delay(16);
 }
 
 // ************************************************** **************************************************
