@@ -1,7 +1,7 @@
 // ************************************************** **************************************************
 // Ensemble v1.0
 //
-// Alchemy Synth
+//
 // Leads - Airy Synth Lead
 // Leads - Classic 80s Epic Brass
 // Mallets - Sweet Bell
