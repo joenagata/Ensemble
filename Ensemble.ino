@@ -95,6 +95,8 @@ int g_note[7] = { 60, 60, 60, 60, 60, 60, 60 };
 int g_next = 0;
 int g_prev = 0;
 
+int g_n = 0;
+
 MidiBleServer midiServer("M5Stick");
 
 // ************************************************** **************************************************
@@ -242,14 +244,6 @@ void loop() {
         }
         Serial.println();
 
-      } else {
-        // 無音の時
-        Serial.println("----");
-        for (int i = 0; i < 7; i++) {
-          // Note Off
-          midiServer.noteOff(g_note[i], 0, 0);
-          delay(10);
-        }
       }
     }
 
@@ -274,6 +268,42 @@ void loop() {
 
       dispText();
     }
+
+    // 無音の時、全ての音のNote Offを送信
+    if (g_spread == 0) {
+      int i = g_n / 6;
+      int j, k;
+      switch (g_n % 6) {
+        case 0:
+          j = 3;
+          k = g_pos;
+          break;
+        case 1:
+          j = 3;
+          k = (g_pos + 1) % 7;
+          break;
+        case 2:
+          j = 3;
+          k = (g_pos + 6) % 7;
+          break;
+        case 3:
+          j = 6;
+          k = g_pos;
+          break;
+        case 4:
+          j = 6;
+          k = (g_pos + 1) % 7;
+          break;
+        default:
+          j = 6;
+          k = (g_pos + 6) % 7;
+          break;
+      }
+      midiServer.noteOff(Pitch[g_scale][j][i] + Fifth[g_scale][k], 0, 0);
+      if (++g_n >= 42) {
+        g_n = 0;
+      }
+    }
   }
 
   M5.update();
@@ -295,10 +325,13 @@ void loop() {
   if (M5.BtnPWR.wasClicked()) {
     Serial.println("Button Power");
 
-    int code = Fifth[g_scale][g_pos];
-    for (int j = 0; j < 7; j++) {
+    for (int j = 3; j <= 6; j=j+3) {
       for (int i = 0; i < 7; i++) {
-        midiServer.noteOff(Pitch[g_scale][j][i] + code, 0, 0);
+        midiServer.noteOff(Pitch[g_scale][j][i] + Fifth[g_scale][g_pos], 0, 0);
+        delay(10);
+        midiServer.noteOff(Pitch[g_scale][j][i] + Fifth[g_scale][(g_pos+1)%7], 0, 0);
+        delay(10);
+        midiServer.noteOff(Pitch[g_scale][j][i] + Fifth[g_scale][(g_pos+6)%7], 0, 0);
         delay(10);
       }
     }
