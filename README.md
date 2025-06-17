@@ -38,7 +38,6 @@ The left-right direction changes the key pitch:
 If you tilt the M5StickC PLUS2 significantly to the right, the pitch range of each area shifts leftward, and the rightmost area adds a chord a fifth above the previous top pitch.
 <img src="images/code2.png" align="center" width="850">
 
-### Initial State and Mode Switching
 At startup, the center area is set to C major.
 Pressing the button at the bottom of the screen toggles between major and minor, switching to C minor.
 
