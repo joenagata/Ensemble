@@ -1,5 +1,5 @@
 # Ensemble : Bluetooth MIDI performance device
-
+[<img src="images/ensemble.jpg" width=500>](images/ensemble.jpg)
 
 [🇯🇵 日本語はこちら](README_ja.md)
 
@@ -21,7 +21,7 @@ For example, iOS GarageBand supports BLE MIDI and can be connected to Ensemble a
 ### Chord Structure
 The ball on the screen simulates a bowl-like curved surface. It is pulled toward the center in the left-right direction and toward the frontmost area in the forward-backward direction.
 By tilting the M5StickC PLUS2, the ball rolls across the screen, and its position changes the timbre and pitch.
-
+<img src="images/area.png" align="right" width="200">
 The screen is virtually divided into a 3 (left-right) × 8 (forward-backward) grid.
 - The frontmost area is silent
 - The second row plays only the key note
