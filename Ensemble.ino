@@ -67,21 +67,15 @@ const int Pitch[2][7][7] = {  // Pitch[g_scale][g_spread][osc]
     { -24, -17, -9, 0, 7, 15, 24 } }
 };
 
-const int Fifth[2][7] = { {
-                            //  60, 64, 55, 59, 62, 65, 57  // C4, E4, G3, B3, D4, F4, A3
-                            60, 55, 62, 57, 64, 59, 65  // C4, G3, D4, A3, E4, B3, F4
-                          },
-                          {
-                            //  60, 63, 55, 58, 62, 65, 56
-                            60, 55, 62, 56, 63, 58, 65  // C4, G3, D4, Ab3, Eb4, Bb3, F4
-                          } };
+const int Fifth[2][7] = {
+  { 60, 55, 62, 57, 64, 59, 65 },  // C4, G3, D4, A3, E4, B3, F4
+  { 60, 55, 62, 56, 63, 58, 65 }   // C4, G3, D4, Ab3, Eb4, Bb3, F4
+};
 
-const char *FifthName[2][7] = { { //  "GCE", "BEG", "DGB", "FBD", "ADF", "CFA", "EAC"
-                                  //  "C", "E", "G", "B", "D", "F", "A"
-                                  "C", "G", "D", "A", "E", "B", "F" },
-                                { //  "GCEb", "BbEG", "DGBb", "FBbD", "AbDF", "CFAb", "EbAbC"
-                                  //  "C", "Eb", "G", "Bb", "D", "F", "Ab"
-                                  "C", "G", "D", "Ab", "Eb", "Bb", "F" } };
+const char *FifthName[2][7] = {
+  { "C", "G", "D", "A", "E", "B", "F" },
+  { "Cm", "Gm", "Dm", "Abm", "Ebm", "Bbm", "Fm" }
+};
 
 // ************************************************** **************************************************
 // Gloval
@@ -125,7 +119,7 @@ void setup() {
   M5.begin(cfg);
   Serial.begin(115200);
 
-  // 傾きセンサーの確認
+  // Imuセンサーの確認
   if (M5.Imu.getType() == m5::imu_none) {
     M5.Display.println("IMU not found!");
     while (1) delay(100);
@@ -135,6 +129,7 @@ void setup() {
   midiServer.begin();
   midiServer.setDefaultSendingChannel(0);
 
+  // 画面初期化
   M5.Display.setRotation(0);
   M5.Display.setSwapBytes(false);
   M5.Display.fillScreen(BLACK);
@@ -142,11 +137,13 @@ void setup() {
   M5.Lcd.setTextDatum(middle_center);
   M5.Lcd.setTextSize(1);
 
+  // 描画サイズ
   g_screen_w = M5.Display.width();
   g_screen_h = M5.Display.height() - 20;
 
+  // ボールの初期位置
   g_x = g_screen_w / 2.0f;
-  g_y = g_screen_h - 30;
+  g_y = g_screen_h - 40;
 
   dispText();
 }
@@ -160,16 +157,16 @@ void loop() {
     auto data = M5.Imu.getImuData();
 
     // 前の球を消去
-    M5.Display.fillRect((int)g_x - Radius, (int)g_y - Radius, imgWidth, imgHeight, TFT_BLACK);
+    // M5.Display.fillRect((int)g_x - Radius, (int)g_y - Radius, imgWidth, imgHeight, TFT_BLACK);
 
     // センサーによる加速度
     float ax = -data.accel.x * AccelScale;
     float ay = data.accel.y * AccelScale;
 
-    // 中心への復元力
-    float cx = g_screen_w / 2.0f;
-    float cy = g_screen_h;
-    //float cy = g_screen_h / 2.0f;
+    // 復元力の向かう位置
+    float cx = g_screen_w / 2.0f;  // 中央
+    float cy = g_screen_h;         // 手前
+
     float fx = -(g_x - cx) * SpringX;
     float fy = -(g_y - cy) * SpringY;
 
@@ -181,11 +178,14 @@ void loop() {
     g_vx *= Friction;
     g_vy *= Friction;
 
+    // 前の球を消去
+    M5.Display.fillRect((int)g_x - Radius, (int)g_y - Radius, imgWidth, imgHeight, TFT_BLACK);
+
     // 速度 → 位置
     g_x += g_vx;
     g_y += g_vy;
 
-    // 画面外に出ないよう制限
+    // 画面外に出ないように制限
     if (g_x < Radius) {
       g_x = Radius;
       g_vx = 0;
@@ -206,6 +206,7 @@ void loop() {
     // 現在位置に球を描画
     M5.Display.pushImage((int)g_x - Radius, (int)g_y - Radius, imgWidth, imgHeight, img);
 
+    // 横方向の位置 20〜115 → -1,0,1    <20><32>|<32>|<31><20>
     if (g_x < 52) {
       g_timbre = -1;
     } else if (g_x < 84) {
@@ -214,15 +215,15 @@ void loop() {
       g_timbre = 1;
     }
 
+    // 縦方向の位置 20〜200 → 0〜7
     g_spread = (200 - g_y) / 22.5;
+    g_spread = (g_spread > 7) ? 7 : g_spread;
 
-    if (g_spread == 8) {
-      g_spread = 7;
-    }
 
     if (g_timbre != g_lastTimbre || g_spread != g_lastSpread) {
       Serial.println("Note off");
       for (int i = 0; i < 7; i++) {
+        // Note Off
         midiServer.noteOff(g_note[i], 0, 0);
       }
 
@@ -230,11 +231,11 @@ void loop() {
       g_lastSpread = g_spread;
 
       if (g_spread > 0) {
-
         Serial.println("Note on timbre:" + String(g_timbre) + " spread:" + String(g_spread));
 
         int code = Fifth[g_scale][(g_pos + g_timbre + 7) % 7];
         for (int i = 0; i < 7; i++) {
+          // Note On
           g_note[i] = Pitch[g_scale][g_spread - 1][i] + code;
           Serial.print(" note" + String(i) + ":" + String(g_note[i]));
           midiServer.noteOn(g_note[i], 100, 0);
@@ -244,6 +245,11 @@ void loop() {
       } else {
         // 無音の時
         Serial.println("----");
+        for (int i = 0; i < 7; i++) {
+          // Note Off
+          midiServer.noteOff(g_note[i], 0, 0);
+          delay(10);
+        }
       }
     }
 
@@ -285,6 +291,7 @@ void loop() {
   }
   */
 
+  // ボタンPowerを押した時
   if (M5.BtnPWR.wasClicked()) {
     Serial.println("Button Power");
 
@@ -292,9 +299,10 @@ void loop() {
     for (int j = 0; j < 7; j++) {
       for (int i = 0; i < 7; i++) {
         midiServer.noteOff(Pitch[g_scale][j][i] + code, 0, 0);
-        delay(20);
+        delay(10);
       }
     }
+    midiServer.allNotesOff(0);
   }
   delay(16);
 }
