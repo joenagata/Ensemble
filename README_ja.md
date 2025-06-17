@@ -1,5 +1,5 @@
 # Ensemble : Bluetooth MIDI performance device
-
+[<img src="images/ensemble.jpg" width=500>](images/ensemble.jpg)
 
 [🇺🇸 English version here](README.md)
 
