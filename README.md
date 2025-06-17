@@ -1,4 +1,4 @@
-# Ensemble
+# Ensemble : Bluetooth MIDI performance device
 
 
 [🇯🇵 日本語はこちら](README_ja.md)
