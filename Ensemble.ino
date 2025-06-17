@@ -2,20 +2,6 @@
 // Ensemble v1.0
 //
 //
-// Leads - Airy Synth Lead
-// Leads - Classic 80s Epic Brass
-// Mallets - Sweet Bell
-// Mallets - Warm Bell Pad
-// Pads - Blue Air
-// Pads - Epic Cloud Formation
-//
-// Synth Classics - Soft Analog
-//
-// Synth Pads - Hollywood Strings
-//
-// Other - Strings Staccato
-// Other - Acoustic Guitar
-//
 // ************************************************** **************************************************
 // <Hardware>
 // M5StickC PLUS2
