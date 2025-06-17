@@ -30,12 +30,13 @@ The screen is virtually divided into a 3 (left-right) × 8 (forward-backward) gr
 
 Conceptually, a line is drawn connecting the central point in the second row with a point representing 7 notes evenly spaced over 4 octaves in the backmost row.
 Each row plays chords approximating the line passing through those points.
-
+<img src="images/code1.png" align="center" width="850">
 The left-right direction changes the key pitch:
 - The right area plays a chord a perfect fifth above
 - The left area plays a chord a perfect fifth below
 
 If you tilt the M5StickC PLUS2 significantly to the right, the pitch range of each area shifts leftward, and the rightmost area adds a chord a fifth above the previous top pitch.
+<img src="images/code2.png" align="center" width="850">
 
 ### Initial State and Mode Switching
 At startup, the center area is set to C major.
