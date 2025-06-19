@@ -13,6 +13,8 @@ Play an Ensemble of Bluetooth-Connected MIDI Devices Using the M5StickC PLUS2.
 
 [![Watch the video](https://img.youtube.com/vi/gmjMkxfY2N4/0.jpg)](https://www.youtube.com/watch?v=gmjMkxfY2N4)
 
+**⬆️ Click to watch the video on YouTube**
+
 ### Hardware
 - M5StickC PLUS2
 
