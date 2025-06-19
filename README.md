@@ -11,6 +11,8 @@ Play an Ensemble of Bluetooth-Connected MIDI Devices Using the M5StickC PLUS2.
 - The ball’s forward-backward position expands from a single key note to complex chords
 - The ball’s left-right position plays chords a perfect fifth above or below the key note
 
+[![Watch the video](https://img.youtube.com/vi/gmjMkxfY2N4/0.jpg)](https://www.youtube.com/watch?v=gmjMkxfY2N4)
+
 ### Hardware
 - M5StickC PLUS2
 
