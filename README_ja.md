@@ -11,6 +11,8 @@ M5StickC PLUS2を使用して、Bluetoothで接続したMIDI機器のアンサ�
 - ボールの前後の位置によって、キーの音のみから複雑な和音へと展開
 - ボールの左右の位置によって、キーの音の５度上下の和音を演奏
 
+[![Watch the video](https://img.youtube.com/vi/gmjMkxfY2N4/0.jpg)](https://www.youtube.com/watch?v=gmjMkxfY2N4)
+
 ### ハード構成
 - M5StickC PLUS2
 
