@@ -13,6 +13,8 @@ M5StickC PLUS2を使用して、Bluetoothで接続したMIDI機器のアンサ�
 
 [![Watch the video](https://img.youtube.com/vi/gmjMkxfY2N4/0.jpg)](https://www.youtube.com/watch?v=gmjMkxfY2N4)
 
+**⬆️ クリックすると YouTube で動画が再生されます**
+
 ### ハード構成
 - M5StickC PLUS2
 
